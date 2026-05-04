@@ -377,7 +377,15 @@ export default function App() {
           <div className="rounded-3xl bg-white/90 p-8 text-center font-black text-slate-600">正在加载 {selectedBoardName} 的看板数据...</div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-            <Calendar monthDate={monthDate} selectedDate={selectedDate} today={today} tasks={dataStore.tasks} onSelectDate={setSelectedDate} />
+            <Calendar
+              monthDate={monthDate}
+              selectedDate={selectedDate}
+              today={today}
+              tasks={dataStore.tasks}
+              checkinTasks={dataStore.checkinTasks}
+              checkinRecords={dataStore.checkinRecords}
+              onSelectDate={setSelectedDate}
+            />
             <TaskPanel
               selectedDate={selectedDate}
               today={today}

@@ -1,4 +1,4 @@
-import type { Task } from '../types';
+import type { CheckinRecord, CheckinTask, Task } from '../types';
 import { formatDate, getDayNumber, getMonthDays, isSameMonth } from '../utils/date';
 
 interface CalendarProps {
@@ -6,6 +6,8 @@ interface CalendarProps {
   selectedDate: string;
   today: string;
   tasks: Task[];
+  checkinTasks: CheckinTask[];
+  checkinRecords: CheckinRecord[];
   onSelectDate: (date: string) => void;
 }
 
@@ -44,7 +46,7 @@ const statusDots: Record<Task['status'], string> = {
   postponed: 'bg-amber-500',
 };
 
-export default function Calendar({ monthDate, selectedDate, today, tasks, onSelectDate }: CalendarProps) {
+export default function Calendar({ monthDate, selectedDate, today, tasks, checkinTasks, checkinRecords, onSelectDate }: CalendarProps) {
   const days = getMonthDays(monthDate);
   const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   const selectedDayTasks = tasks.filter((task) => task.date === selectedDate);
@@ -80,6 +82,8 @@ export default function Calendar({ monthDate, selectedDate, today, tasks, onSele
           const dayTasks = tasks.filter((task) => task.date === date);
           const completed = dayTasks.filter((task) => task.status === 'completed').length;
           const postponed = dayTasks.filter((task) => task.status === 'postponed').length;
+          const checkedCheckinIds = new Set(checkinRecords.filter((record) => record.date === date).map((record) => record.checkinTaskId));
+          const checkedCheckins = checkinTasks.filter((task) => checkedCheckinIds.has(task.id)).length;
           const rate = getRate(dayTasks);
           const isToday = date === today;
           const isSelected = date === selectedDate;
@@ -134,7 +138,7 @@ export default function Calendar({ monthDate, selectedDate, today, tasks, onSele
                   </div>
                   <span className="rounded-full bg-slate-950 px-2 py-0.5 text-[11px] font-black text-white">{rate}%</span>
                 </div>
-                <div className="mb-2 grid grid-cols-3 gap-1 text-center text-[11px]">
+                <div className="mb-2 grid grid-cols-4 gap-1 text-center text-[11px]">
                   <div className="rounded-lg bg-slate-50 px-2 py-1">
                     <p className="font-bold text-slate-400">任务</p>
                     <p className="font-black text-slate-900">{dayTasks.length}</p>
@@ -147,11 +151,15 @@ export default function Calendar({ monthDate, selectedDate, today, tasks, onSele
                     <p className="font-bold text-amber-500">延期</p>
                     <p className="font-black text-amber-700">{postponed}</p>
                   </div>
+                  <div className="rounded-lg bg-violet-50 px-2 py-1">
+                    <p className="font-bold text-violet-500">打卡</p>
+                    <p className="font-black text-violet-700">{checkedCheckins}/{checkinTasks.length}</p>
+                  </div>
                 </div>
                 <div className="max-h-48 space-y-1.5 overflow-auto">
                   {dayTasks.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs font-bold text-slate-400">
-                      当天暂无任务安排
+                      当天暂无普通任务
                     </div>
                   ) : (
                     dayTasks.map((task) => (
@@ -166,6 +174,30 @@ export default function Calendar({ monthDate, selectedDate, today, tasks, onSele
                       </div>
                     ))
                   )}
+
+                  <div className="pt-1">
+                    <p className="mb-1 text-[11px] font-black text-violet-500">每日打卡</p>
+                    {checkinTasks.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-violet-100 bg-violet-50 p-2 text-center text-xs font-bold text-violet-400">
+                        暂无打卡任务
+                      </div>
+                    ) : (
+                      checkinTasks.map((task) => {
+                        const checked = checkedCheckinIds.has(task.id);
+                        return (
+                          <div key={task.id} className="rounded-xl border border-violet-100 bg-violet-50 px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${checked ? 'bg-violet-500 text-white' : 'bg-white text-violet-300 ring-1 ring-violet-200'}`}>
+                                {checked ? '✓' : ''}
+                              </span>
+                              <span className={`min-w-0 flex-1 truncate text-xs font-black ${checked ? 'text-violet-700' : 'text-slate-600'}`}>{task.title}</span>
+                              <span className="shrink-0 text-[10px] font-bold text-violet-400">{checked ? '已打卡' : '未打卡'}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
