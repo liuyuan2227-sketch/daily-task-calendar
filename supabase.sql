@@ -17,6 +17,7 @@ create table if not exists public.public_profiles (
 
 alter table public.public_profiles add column if not exists display_name text;
 alter table public.public_profiles add column if not exists email text;
+alter table public.public_profiles add column if not exists deleted_at timestamptz;
 
 alter table public.tasks add column if not exists type text not null default 'daily';
 do $$
@@ -167,10 +168,11 @@ create policy "profiles insert own"
   with check (id = auth.uid());
 
 drop policy if exists "profiles update own" on public.public_profiles;
-create policy "profiles update own"
+drop policy if exists "profiles update authenticated" on public.public_profiles;
+create policy "profiles update authenticated"
   on public.public_profiles for update
-  using (id = auth.uid())
-  with check (id = auth.uid());
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
 
 drop policy if exists "tasks select public personal progress or workspace member" on public.tasks;
 drop policy if exists "tasks select personal or workspace member" on public.tasks;

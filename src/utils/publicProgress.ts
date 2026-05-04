@@ -37,7 +37,7 @@ export async function fetchPublicReviews(): Promise<DayReview[]> {
 }
 
 export async function fetchPublicUsers(): Promise<Record<string, string>> {
-  const { data, error } = await supabase.from('public_profiles').select('id,display_name,email');
+  const { data, error } = await supabase.from('public_profiles').select('id,display_name,email').is('deleted_at', null);
   if (error) throw error;
 
   return Object.fromEntries(
@@ -48,6 +48,21 @@ export async function fetchPublicUsers(): Promise<Record<string, string>> {
   );
 }
 
+export async function findProfileByName(name: string): Promise<{ id: string; displayName: string } | undefined> {
+  const { data, error } = await supabase
+    .from('public_profiles')
+    .select('id,display_name')
+    .eq('display_name', name)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return undefined;
+  return { id: data.id as string, displayName: (data.display_name as string | null) ?? name };
+}
+
 export function calculatePublicProgress(
   tasks: Task[],
   reviews: DayReview[],
@@ -55,8 +70,8 @@ export function calculatePublicProgress(
 ): PublicUserProgress[] {
   const userIds = Array.from(
     new Set([
-      ...tasks.map((task) => task.userId).filter((userId): userId is string => Boolean(userId)),
-      ...reviews.map((review) => review.userId).filter((userId): userId is string => Boolean(userId)),
+      ...tasks.map((task) => task.userId).filter((userId): userId is string => Boolean(userId) && Boolean(users[userId as string])),
+      ...reviews.map((review) => review.userId).filter((userId): userId is string => Boolean(userId) && Boolean(users[userId as string])),
       ...Object.keys(users),
     ]),
   );

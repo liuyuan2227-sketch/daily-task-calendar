@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { findProfileByName } from '../utils/publicProgress';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -34,6 +35,11 @@ export function useAuth() {
     const trimmedName = name.trim();
     if (!trimmedName) throw new Error('请输入你的名字');
 
+    const existingProfile = await findProfileByName(trimmedName);
+    if (existingProfile) {
+      localStorage.setItem('preferred_board_user_id', existingProfile.id);
+    }
+
     const { data, error } = await supabase.auth.signInAnonymously({
       options: {
         data: {
@@ -44,13 +50,14 @@ export function useAuth() {
 
     if (error) throw error;
 
-    if (data.user) {
+    if (data.user && !existingProfile) {
       await supabase.from('public_profiles').upsert({
         id: data.user.id,
         display_name: trimmedName,
         email: null,
         updated_at: new Date().toISOString(),
       });
+      localStorage.setItem('preferred_board_user_id', data.user.id);
     }
   }
 

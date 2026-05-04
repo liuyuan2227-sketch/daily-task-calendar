@@ -16,7 +16,7 @@ import {
   type PublicUserProgress,
 } from './utils/publicProgress';
 import { calculateMonthStats } from './utils/stats';
-import { importLocalData } from './utils/supabaseData';
+import { deleteBoard, importLocalData } from './utils/supabaseData';
 import { useAuth } from './hooks/useAuth';
 import { useSupabaseData } from './hooks/useSupabaseData';
 
@@ -83,7 +83,8 @@ export default function App() {
     }
 
     const sharedBoardUserId = new URLSearchParams(window.location.search).get('board');
-    setSelectedBoardUserId((current) => current ?? sharedBoardUserId ?? auth.user?.id);
+    const preferredBoardUserId = localStorage.getItem('preferred_board_user_id');
+    setSelectedBoardUserId((current) => current ?? sharedBoardUserId ?? preferredBoardUserId ?? auth.user?.id);
   }, [auth.user?.id]);
 
   useEffect(() => {
@@ -250,6 +251,22 @@ export default function App() {
     }
   }
 
+  async function deleteUserBoard(userId: string) {
+    const board = boardSwitcherUsers.find((user) => user.userId === userId);
+    if (!board) return;
+    if (!window.confirm(`确定删除「${board.name}」的整个看板吗？任务、复盘和打卡都会删除。`)) return;
+
+    try {
+      await deleteBoard(userId);
+      localStorage.removeItem('preferred_board_user_id');
+      await loadPublicProgress();
+      setSelectedBoardUserId(auth.user?.id === userId ? undefined : auth.user?.id);
+      showToast('看板已删除');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : '看板删除失败');
+    }
+  }
+
   async function importData(data: AppData) {
     if (!selectedBoardUserId) return;
     await importLocalData(selectedBoardUserId, data.tasks, data.reviews);
@@ -296,6 +313,7 @@ export default function App() {
           selectedUserId={selectedBoardUserId}
           currentUserId={auth.user.id}
           onSelectUser={setSelectedBoardUserId}
+          onDeleteUser={deleteUserBoard}
         />
 
         <LocalDataMigration userId={auth.user.id} onMigrated={dataStore.reload} onMessage={showToast} />

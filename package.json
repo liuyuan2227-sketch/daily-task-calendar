@@ -2,7 +2,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "build:github": "tsc -b && vite build --base /daily-task-calendar/",
+    "preview": "vite preview --host 0.0.0.0",
+    "deploy:github": "npm run build:github && gh-pages -d dist"
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",
@@ -17,6 +19,7 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "vercel": "^53.1.0"
   }
 }

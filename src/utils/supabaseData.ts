@@ -368,6 +368,24 @@ export async function importLocalData(userId: string, tasks: Task[], reviews: Da
   }
 }
 
+export async function deleteBoard(userId: string): Promise<void> {
+  const now = new Date().toISOString();
+  const { error: recordsError } = await supabase.from('checkin_records').delete().eq('user_id', userId);
+  if (recordsError) throw recordsError;
+
+  const { error: checkinTasksError } = await supabase.from('checkin_tasks').update({ archived_at: now }).eq('user_id', userId);
+  if (checkinTasksError) throw checkinTasksError;
+
+  const { error: tasksError } = await supabase.from('tasks').delete().eq('user_id', userId).is('workspace_id', null);
+  if (tasksError) throw tasksError;
+
+  const { error: reviewsError } = await supabase.from('day_reviews').delete().eq('user_id', userId).is('workspace_id', null);
+  if (reviewsError) throw reviewsError;
+
+  const { error: profileError } = await supabase.from('public_profiles').update({ deleted_at: now, updated_at: now }).eq('id', userId);
+  if (profileError) throw profileError;
+}
+
 function isMissingTypeColumnError(error: { code?: string; message?: string }): boolean {
   return error.code === 'PGRST204' || Boolean(error.message?.includes("'type' column") || error.message?.includes('type column'));
 }
