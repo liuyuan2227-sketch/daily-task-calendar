@@ -146,12 +146,10 @@ export function useSupabaseData(boardUserId: string | undefined) {
   async function addTask(title: string, date: string, priority: TaskPriority, type: TaskType) {
     if (!boardUserId) return;
     if (type === 'checkin') {
-      const nextTask = await createCheckinTask(boardUserId, title, priority);
-      setCheckinTasks((current) => (current.some((task) => task.id === nextTask.id) ? current : [...current, nextTask]));
+      await createCheckinTask(boardUserId, title, priority);
       return;
     }
-    const nextTask = await createTask(boardUserId, { title, date, priority, type: 'daily', status: 'todo' });
-    setTasks((current) => (current.some((task) => task.id === nextTask.id) ? current : [...current, nextTask]));
+    await createTask(boardUserId, { title, date, priority, type: 'daily', status: 'todo' });
   }
 
   async function updateTask(id: string, patch: Partial<Task>) {
