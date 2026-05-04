@@ -50,7 +50,7 @@ export default function BoardSwitcher({ users, selectedUserId, currentUserId, on
             <button
               type="button"
               onClick={() => onDeleteUser(user.userId)}
-              className="mt-1 w-full rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-600 hover:bg-rose-100"
+              className="mt-0.5 rounded bg-slate-50 px-1.5 py-0.5 text-[9px] font-bold text-slate-500 hover:bg-slate-100"
             >
               删除看板
             </button>
