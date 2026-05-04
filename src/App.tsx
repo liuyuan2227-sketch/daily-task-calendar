@@ -254,14 +254,16 @@ export default function App() {
   async function deleteUserBoard(userId: string) {
     const board = boardSwitcherUsers.find((user) => user.userId === userId);
     if (!board) return;
-    if (!window.confirm(`确定删除「${board.name}」的整个看板吗？任务、复盘和打卡都会删除。`)) return;
+    if (!window.confirm(`确定删除「${board.name}」的整个看板吗？删除后这个看板不会再显示。`)) return;
 
     try {
       await deleteBoard(userId);
       localStorage.removeItem('preferred_board_user_id');
-      await loadPublicProgress();
-      setSelectedBoardUserId(auth.user?.id === userId ? undefined : auth.user?.id);
+      const nextUsers = boardSwitcherUsers.filter((user) => user.userId !== userId);
+      setPublicProgress(nextUsers);
+      setSelectedBoardUserId(nextUsers[0]?.userId ?? auth.user?.id);
       showToast('看板已删除');
+      void loadPublicProgress();
     } catch (error) {
       showToast(error instanceof Error ? error.message : '看板删除失败');
     }
