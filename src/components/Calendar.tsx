@@ -87,44 +87,88 @@ export default function Calendar({ monthDate, selectedDate, today, tasks, onSele
           const toneClass = getToneClass(rate, dayTasks.length, postponed > 0);
 
           return (
-            <button
-              key={date}
-              type="button"
-              onClick={() => onSelectDate(date)}
-              className={`relative min-h-24 rounded-2xl border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-lg md:min-h-32 md:p-3 ${
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 shadow-[0_12px_35px_rgba(37,99,235,0.18)] ring-2 ring-blue-100'
-                  : `hover:border-slate-300 ${toneClass}`
-              } ${inMonth ? 'opacity-100' : 'opacity-35'}`}
-            >
-              <div className="flex items-center justify-between gap-1">
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-black md:text-base ${
-                    isToday ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
-                  }`}
-                >
-                  {getDayNumber(date)}
-                </span>
-                {isToday && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black text-blue-700">今天</span>}
-              </div>
+            <div key={date} className="group relative">
+              <button
+                type="button"
+                onClick={() => onSelectDate(date)}
+                className={`relative min-h-24 w-full rounded-2xl border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-lg md:min-h-32 md:p-3 ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-50 shadow-[0_12px_35px_rgba(37,99,235,0.18)] ring-2 ring-blue-100'
+                    : `hover:border-slate-300 ${toneClass}`
+                } ${inMonth ? 'opacity-100' : 'opacity-35'}`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-black md:text-base ${
+                      isToday ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
+                    }`}
+                  >
+                    {getDayNumber(date)}
+                  </span>
+                  {isToday && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black text-blue-700">今天</span>}
+                </div>
 
-              <div className="mt-3 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-500">
-                  <span>{dayTasks.length ? '任务' : '空闲'}</span>
-                  <span className="font-bold text-slate-700">{completed}/{dayTasks.length}</span>
+                <div className="mt-3 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span>{dayTasks.length ? '任务' : '空闲'}</span>
+                    <span className="font-bold text-slate-700">{completed}/{dayTasks.length}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/80 ring-1 ring-slate-100">
+                    <div
+                      className={`h-1.5 rounded-full ${getRateClass(rate, dayTasks.length)}`}
+                      style={{ width: `${dayTasks.length ? rate : 100}%` }}
+                    />
+                  </div>
+                  <div className="flex min-h-5 items-center justify-between">
+                    <span className="font-black text-slate-700">{dayTasks.length ? `${rate}%` : '无任务'}</span>
+                    {postponed > 0 && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-700">延期 {postponed}</span>}
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-white/80 ring-1 ring-slate-100">
-                  <div
-                    className={`h-1.5 rounded-full ${getRateClass(rate, dayTasks.length)}`}
-                    style={{ width: `${dayTasks.length ? rate : 100}%` }}
-                  />
+              </button>
+
+              <div className="pointer-events-none absolute left-1/2 top-full z-40 mt-2 hidden w-64 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl shadow-slate-300/60 group-hover:block group-focus-within:block">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] font-black text-blue-500">{date}</p>
+                    <h3 className="text-sm font-black text-slate-950">当天任务情况</h3>
+                  </div>
+                  <span className="rounded-full bg-slate-950 px-2 py-0.5 text-[11px] font-black text-white">{rate}%</span>
                 </div>
-                <div className="flex min-h-5 items-center justify-between">
-                  <span className="font-black text-slate-700">{dayTasks.length ? `${rate}%` : '无任务'}</span>
-                  {postponed > 0 && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-700">延期 {postponed}</span>}
+                <div className="mb-2 grid grid-cols-3 gap-1 text-center text-[11px]">
+                  <div className="rounded-lg bg-slate-50 px-2 py-1">
+                    <p className="font-bold text-slate-400">任务</p>
+                    <p className="font-black text-slate-900">{dayTasks.length}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 px-2 py-1">
+                    <p className="font-bold text-emerald-500">完成</p>
+                    <p className="font-black text-emerald-700">{completed}</p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 px-2 py-1">
+                    <p className="font-bold text-amber-500">延期</p>
+                    <p className="font-black text-amber-700">{postponed}</p>
+                  </div>
+                </div>
+                <div className="max-h-48 space-y-1.5 overflow-auto">
+                  {dayTasks.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs font-bold text-slate-400">
+                      当天暂无任务安排
+                    </div>
+                  ) : (
+                    dayTasks.map((task) => (
+                      <div key={task.id} className="rounded-xl border border-slate-100 bg-slate-50 px-2 py-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${statusDots[task.status]}`} />
+                          <span className={`min-w-0 flex-1 truncate text-xs font-black ${task.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                            {task.title}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-bold text-slate-400">{statusLabels[task.status]}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
