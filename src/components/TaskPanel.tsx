@@ -253,7 +253,7 @@ export default function TaskPanel({
                     onClick={() => onToggleCheckin(task.id, !checked)}
                     className={`rounded-md px-2 py-1 font-bold ${checked ? 'bg-violet-100 text-violet-700 hover:bg-violet-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                   >
-                    {checked ? '取消打卡' : '今日已打卡'}
+                    {checked ? '取消打卡' : '手动打卡'}
                   </button>
                   <button
                     type="button"
