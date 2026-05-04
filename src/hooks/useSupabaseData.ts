@@ -146,41 +146,59 @@ export function useSupabaseData(boardUserId: string | undefined) {
   async function addTask(title: string, date: string, priority: TaskPriority, type: TaskType) {
     if (!boardUserId) return;
     if (type === 'checkin') {
-      await createCheckinTask(boardUserId, title, priority);
+      const nextTask = await createCheckinTask(boardUserId, title, priority);
+      setCheckinTasks((current) => [...current, nextTask]);
       return;
     }
-    await createTask(boardUserId, { title, date, priority, type: 'daily', status: 'todo' });
+    const nextTask = await createTask(boardUserId, { title, date, priority, type: 'daily', status: 'todo' });
+    setTasks((current) => [...current, nextTask]);
   }
 
   async function updateTask(id: string, patch: Partial<Task>) {
     await updateTaskRow(id, patch);
+    setTasks((current) => current.map((task) => (task.id === id ? { ...task, ...patch, updatedAt: new Date().toISOString() } : task)));
   }
 
   async function deleteTask(id: string) {
     await deleteTaskRow(id);
+    setTasks((current) => current.filter((task) => task.id !== id));
   }
 
   async function postponeTask(task: Task) {
     if (!boardUserId) return;
     await postponeTaskRow(boardUserId, task);
+    await reload();
   }
 
   async function updateReview(date: string, content: string) {
     if (!boardUserId) return;
-    await upsertReview(boardUserId, date, content);
+    const nextReview = await upsertReview(boardUserId, date, content);
+    setReviews((current) => {
+      const exists = current.some((review) => review.id === nextReview.id || review.date === nextReview.date);
+      return exists
+        ? current.map((review) => (review.id === nextReview.id || review.date === nextReview.date ? nextReview : review))
+        : [...current, nextReview];
+    });
   }
 
   async function updateCheckinTask(id: string, patch: Partial<Pick<CheckinTask, 'title' | 'priority'>>) {
     await updateCheckinTaskRow(id, patch);
+    setCheckinTasks((current) => current.map((task) => (task.id === id ? { ...task, ...patch, updatedAt: new Date().toISOString() } : task)));
   }
 
   async function deleteCheckinTask(id: string) {
     await deleteCheckinTaskRow(id);
+    setCheckinTasks((current) => current.filter((task) => task.id !== id));
+    setCheckinRecords((current) => current.filter((record) => record.checkinTaskId !== id));
   }
 
   async function toggleCheckin(checkinTaskId: string, date: string, checked: boolean) {
     if (!boardUserId) return;
-    await setCheckinRecord(boardUserId, checkinTaskId, date, checked);
+    const nextRecord = await setCheckinRecord(boardUserId, checkinTaskId, date, checked);
+    setCheckinRecords((current) => {
+      const rest = current.filter((record) => !(record.checkinTaskId === checkinTaskId && record.date === date));
+      return nextRecord ? [...rest, nextRecord] : rest;
+    });
   }
 
   return {

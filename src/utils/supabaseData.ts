@@ -275,24 +275,29 @@ export async function deleteCheckinTaskRow(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function setCheckinRecord(userId: string, checkinTaskId: string, date: string, checked: boolean): Promise<void> {
+export async function setCheckinRecord(userId: string, checkinTaskId: string, date: string, checked: boolean): Promise<CheckinRecord | undefined> {
   if (!checked) {
     const { error } = await supabase.from('checkin_records').delete().eq('checkin_task_id', checkinTaskId).eq('date', date);
     if (error) throw error;
-    return;
+    return undefined;
   }
 
   const now = new Date().toISOString();
-  const { error } = await supabase.from('checkin_records').upsert(
-    {
-      checkin_task_id: checkinTaskId,
-      user_id: userId,
-      date,
-      completed_at: now,
-    },
-    { onConflict: 'checkin_task_id,date' },
-  );
+  const { data, error } = await supabase
+    .from('checkin_records')
+    .upsert(
+      {
+        checkin_task_id: checkinTaskId,
+        user_id: userId,
+        date,
+        completed_at: now,
+      },
+      { onConflict: 'checkin_task_id,date' },
+    )
+    .select('*')
+    .single();
   if (error) throw error;
+  return mapCheckinRecord(data as CheckinRecordRow);
 }
 
 export async function fetchReviews(userId?: string): Promise<DayReview[]> {
