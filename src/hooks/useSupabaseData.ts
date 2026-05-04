@@ -147,11 +147,11 @@ export function useSupabaseData(boardUserId: string | undefined) {
     if (!boardUserId) return;
     if (type === 'checkin') {
       const nextTask = await createCheckinTask(boardUserId, title, priority);
-      setCheckinTasks((current) => [...current, nextTask]);
+      setCheckinTasks((current) => (current.some((task) => task.id === nextTask.id) ? current : [...current, nextTask]));
       return;
     }
     const nextTask = await createTask(boardUserId, { title, date, priority, type: 'daily', status: 'todo' });
-    setTasks((current) => [...current, nextTask]);
+    setTasks((current) => (current.some((task) => task.id === nextTask.id) ? current : [...current, nextTask]));
   }
 
   async function updateTask(id: string, patch: Partial<Task>) {
