@@ -36,22 +36,34 @@ export async function fetchPublicReviews(): Promise<DayReview[]> {
   return ((data ?? []) as Parameters<typeof mapReview>[0][]).map(mapReview);
 }
 
+interface PublicProfileRow {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  created_at: string;
+}
+
 export async function fetchPublicUsers(): Promise<Record<string, string>> {
-  const { data, error } = await supabase.from('public_profiles').select('id,display_name,email').is('deleted_at', null);
+  const { data, error } = await supabase
+    .from('public_profiles')
+    .select('id,display_name,email,created_at')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
   if (error) throw error;
 
-  return Object.fromEntries(
-    ((data ?? []) as { id: string; display_name: string | null; email: string | null }[]).map((profile) => [
-      profile.id,
-      profile.display_name || profile.email || '未知用户',
-    ]),
-  );
+  const uniqueUsers = new Map<string, PublicProfileRow>();
+  ((data ?? []) as PublicProfileRow[]).forEach((profile) => {
+    const name = profile.display_name || profile.email || '未知用户';
+    if (!uniqueUsers.has(name)) uniqueUsers.set(name, profile);
+  });
+
+  return Object.fromEntries(Array.from(uniqueUsers.values()).map((profile) => [profile.id, profile.display_name || profile.email || '未知用户']));
 }
 
 export async function findProfileByName(name: string): Promise<{ id: string; displayName: string } | undefined> {
   const { data, error } = await supabase
     .from('public_profiles')
-    .select('id,display_name')
+    .select('id,display_name,created_at')
     .eq('display_name', name)
     .is('deleted_at', null)
     .order('created_at', { ascending: true })
