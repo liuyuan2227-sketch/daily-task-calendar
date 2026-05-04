@@ -27,6 +27,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [selectedBoardUserId, setSelectedBoardUserId] = useState<string>();
   const [publicProgress, setPublicProgress] = useState<PublicUserProgress[]>([]);
+  const [deletedBoardIds, setDeletedBoardIds] = useState<string[]>([]);
   const [publicLoading, setPublicLoading] = useState(false);
   const auth = useAuth();
   const dataStore = useSupabaseData(selectedBoardUserId);
@@ -44,9 +45,13 @@ export default function App() {
   async function loadPublicProgress() {
     if (!auth.user) return;
     setPublicLoading(true);
-    const fallbackUsers: Record<string, string> = {
-      [auth.user.id]: (auth.user.user_metadata?.display_name as string | undefined) ?? '我的看板',
-    };
+    const deletedBoards = JSON.parse(localStorage.getItem('deleted_board_user_ids') ?? '[]') as string[];
+    setDeletedBoardIds(deletedBoards);
+    const fallbackUsers: Record<string, string> = deletedBoards.includes(auth.user.id)
+      ? {}
+      : {
+          [auth.user.id]: (auth.user.user_metadata?.display_name as string | undefined) ?? '我的看板',
+        };
 
     try {
       let tasks: Task[] = [];
@@ -108,7 +113,7 @@ export default function App() {
   const currentUserName = (auth.user?.user_metadata?.display_name as string | undefined) ?? '我的';
   const selectedBoardUser = publicProgress.find((user) => user.userId === selectedBoardUserId);
   const selectedBoardName = selectedBoardUser?.name ?? (selectedBoardUserId === auth.user?.id ? currentUserName : '成员');
-  const boardSwitcherUsers = publicProgress.some((user) => user.userId === auth.user?.id)
+  const boardSwitcherUsers = (publicProgress.some((user) => user.userId === auth.user?.id) || deletedBoardIds.includes(auth.user?.id ?? ''))
     ? publicProgress
     : [
         {
@@ -258,10 +263,13 @@ export default function App() {
 
     try {
       await deleteBoard(userId);
+      const deletedBoards = Array.from(new Set([...deletedBoardIds, userId]));
+      setDeletedBoardIds(deletedBoards);
+      localStorage.setItem('deleted_board_user_ids', JSON.stringify(deletedBoards));
       localStorage.removeItem('preferred_board_user_id');
       const nextUsers = boardSwitcherUsers.filter((user) => user.userId !== userId);
       setPublicProgress(nextUsers);
-      setSelectedBoardUserId(nextUsers[0]?.userId ?? auth.user?.id);
+      setSelectedBoardUserId(nextUsers[0]?.userId);
       showToast('看板已删除');
       void loadPublicProgress();
     } catch (error) {
